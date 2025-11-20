@@ -3,6 +3,3 @@
 from typing import Final
 
 DOMAIN: Final = "huawei_eg8145v5"
-
-# Configuration defaults
-DEFAULT_USERNAME: Final = "Epuser"

@@ -1,11 +1,15 @@
 {
   "domain": "huawei_eg8145v5",
   "name": "Huawei EG8145V5",
-  "codeowners": [],
+  "codeowners": [
+    "@undefjs"
+  ],
   "config_flow": true,
-  "documentation": "https://github.com/Sheep26/huawei_hg659",
+  "documentation": "https://github.com/undefjs/huawei-eg8145v5-hacs",
   "iot_class": "local_polling",
-  "issue_tracker": "",
+  "issue_tracker": "https://github.com/undefjs/huawei-eg8145v5-hacs/issues",
   "version": "1.0.0",
-  "requirements": ["beautifulsoup4>=4.9.3", "requests>=2.25.1"]
+  "requirements": [
+    "requests>=2.25.1"
+  ]
 }

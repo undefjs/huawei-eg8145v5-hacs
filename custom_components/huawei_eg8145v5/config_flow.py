@@ -6,14 +6,14 @@ from homeassistant.const import CONF_HOST, CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DOMAIN, DEFAULT_USERNAME
+from .const import DOMAIN
 from .client import HuaweiEG8145V5Client
 
 _LOGGER = logging.getLogger(__name__)
 
 DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_HOST): str,
-    vol.Required(CONF_USERNAME, default=DEFAULT_USERNAME): str,
+    vol.Required(CONF_USERNAME): str,
     vol.Required(CONF_PASSWORD): str,
 })
 

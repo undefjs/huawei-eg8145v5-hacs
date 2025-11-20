@@ -6,9 +6,9 @@ __pycache__/
 .Python
 *.egg-info/
 
-# Testing
-*.html
-*.txt
+# Testing - only in root directory
+/*.html
+/*.txt
 device_data.txt
 deviceinfo.html
 getuserdevinfo.txt
@@ -20,12 +20,11 @@ index_asp.html
 dashboard.html
 login_page.html
 
-# Test scripts
-test_*.py
-client_test.py
-client.py
-explore_pages.py
-follow_redirects.py
+# Test scripts - only in root directory
+/test_*.py
+/client_test.py
+/explore_pages.py
+/follow_redirects.py
 
 # IDE
 .vscode/
