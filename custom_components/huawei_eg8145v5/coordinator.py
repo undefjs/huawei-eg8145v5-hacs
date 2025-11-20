@@ -33,11 +33,13 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
             data = {}
             
             # We run these in executor because client is synchronous
+            all_devices = await self.hass.async_add_executor_job(self.client.get_devices)
             active_devices = await self.hass.async_add_executor_job(self.client.get_active_devices)
             device_info = await self.hass.async_add_executor_job(self.client.get_device_info)
             device_count = await self.hass.async_add_executor_job(self.client.get_device_count)
             
-            data["active_devices"] = active_devices
+            data["devices"] = all_devices  # All devices (online + offline)
+            data["active_devices"] = active_devices  # Only online devices
             data["device_info"] = device_info
             data["device_count"] = device_count
             
