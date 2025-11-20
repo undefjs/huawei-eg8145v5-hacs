@@ -10,6 +10,7 @@
   "issue_tracker": "https://github.com/undefjs/huawei-eg8145v5-hacs/issues",
   "version": "1.0.0",
   "requirements": [
-    "requests>=2.25.1"
+    "requests>=2.25.1",
+    "python-dateutil>=2.8.0"
   ]
 }

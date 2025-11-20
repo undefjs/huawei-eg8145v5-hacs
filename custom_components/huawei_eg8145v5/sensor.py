@@ -132,22 +132,34 @@ class HuaweiUptimeSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Return when the router was last booted."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
+        from dateutil import parser
         
         device_info = self.coordinator.data.get("device_info", {})
-        uptime_minutes = device_info.get("uptime")
+        uptime_seconds_str = device_info.get("uptime")
+        system_time_str = device_info.get("system_time")
         
-        # Uptime from router is in MINUTES
-        if uptime_minutes and isinstance(uptime_minutes, (int, float)):
-            minutes = int(uptime_minutes)
-        elif isinstance(uptime_minutes, str) and uptime_minutes.isdigit():
-            minutes = int(uptime_minutes)
+        # Uptime from router is in SECONDS
+        if uptime_seconds_str and isinstance(uptime_seconds_str, str) and uptime_seconds_str.isdigit():
+            uptime_seconds = int(uptime_seconds_str)
+        elif isinstance(uptime_seconds_str, (int, float)):
+            uptime_seconds = int(uptime_seconds_str)
         else:
             return None
         
-        # Calculate boot time: current time - uptime
-        now = datetime.now(timezone.utc)
-        boot_time = now - timedelta(minutes=minutes)
+        # Use router's system time if available, otherwise use current time
+        if system_time_str:
+            try:
+                # Parse router time: '2025-11-20 23:57:30+01:00'
+                router_time = parser.parse(system_time_str)
+            except (ValueError, TypeError):
+                # Fallback to current time if parsing fails
+                router_time = datetime.now()
+        else:
+            router_time = datetime.now()
+        
+        # Calculate boot time: router_time - uptime
+        boot_time = router_time - timedelta(seconds=uptime_seconds)
         
         return boot_time
 
@@ -155,22 +167,24 @@ class HuaweiUptimeSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         """Return formatted uptime."""
         device_info = self.coordinator.data.get("device_info", {})
-        uptime_minutes = device_info.get("uptime")
+        uptime_seconds_str = device_info.get("uptime")
         
-        if uptime_minutes and isinstance(uptime_minutes, (int, float, str)):
+        if uptime_seconds_str and isinstance(uptime_seconds_str, (str, int, float)):
             try:
-                minutes = int(uptime_minutes) if isinstance(uptime_minutes, (int, float)) else int(uptime_minutes) if uptime_minutes.isdigit() else 0
-                if minutes > 0:
-                    days = minutes // 1440  # 1440 minutes in a day
-                    hours = (minutes % 1440) // 60
-                    mins = minutes % 60
+                seconds = int(uptime_seconds_str) if isinstance(uptime_seconds_str, (int, float, str)) and str(uptime_seconds_str).isdigit() else 0
+                if seconds > 0:
+                    days = seconds // 86400  # 86400 seconds in a day
+                    hours = (seconds % 86400) // 3600
+                    minutes = (seconds % 3600) // 60
+                    secs = seconds % 60
                     
                     return {
-                        "uptime_formatted": f"{days}d {hours}h {mins}m",
+                        "uptime_formatted": f"{days}d {hours}h {minutes}m {secs}s",
                         "uptime_days": days,
                         "uptime_hours": hours,
-                        "uptime_minutes": mins,
-                        "uptime_total_minutes": minutes,
+                        "uptime_minutes": minutes,
+                        "uptime_seconds": secs,
+                        "uptime_total_seconds": seconds,
                     }
             except (ValueError, AttributeError):
                 pass

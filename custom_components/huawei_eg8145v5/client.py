@@ -127,6 +127,9 @@ class HuaweiEG8145V5Client:
             cpu_match = re.search(r"var cpuUsed = '(\d+)%'", response.text)
             mem_match = re.search(r"var memUsed = '(\d+)%'", response.text)
             uptime_match = re.search(r"var dev_uptime = '(\d+)'", response.text)
+            
+            # Extract system time from router
+            system_time_match = re.search(r"var systemdsttime = '([^']+)'", response.text)
 
             info = {}
             if device_match:
@@ -141,7 +144,8 @@ class HuaweiEG8145V5Client:
                         "mac": params[7].replace("\\x3a", ":") if len(params) > 7 else "",
                         "cpu_usage": cpu_match.group(1) if cpu_match else "",
                         "memory_usage": mem_match.group(1) if mem_match else "",
-                        "uptime": uptime_match.group(1) if uptime_match else ""
+                        "uptime": uptime_match.group(1) if uptime_match else "",
+                        "system_time": system_time_match.group(1) if system_time_match else ""
                     }
             
             return info if info else {}
