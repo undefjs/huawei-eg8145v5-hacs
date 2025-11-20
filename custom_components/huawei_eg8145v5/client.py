@@ -114,32 +114,35 @@ class HuaweiEG8145V5Client:
         try:
             response = self._get("/html/ssmp/deviceinfo/deviceinfo.asp")
             if response.status_code != 200:
-                return {"model": "EG8145V5", "uptime": 0}
+                return {}
             
             import re
             
             # Extract device info from JavaScript variable
             # Pattern: new stDeviceInfo("domain","SerialNumber","HardwareVersion","SoftwareVersion","ModelName","VendorID","ReleaseTime","Mac","Description","ManufactureInfo","DeviceAlias")
-            device_pattern = r'new (?:st|gdgd|aisAp)DeviceInfo\(([^)]+)\)'
+            device_pattern = r'new stDeviceInfo\(([^)]+)\)'
             device_match = re.search(device_pattern, response.text, re.IGNORECASE)
             
+            # Extract CPU and memory usage
+            cpu_match = re.search(r"var cpuUsed = '(\d+)%'", response.text)
+            mem_match = re.search(r"var memUsed = '(\d+)%'", response.text)
+            uptime_match = re.search(r"var dev_uptime = '(\d+)'", response.text)
+
             info = {}
             if device_match:
                 params = re.findall(r'"([^"]*)"', device_match.group(1))
                 if len(params) >= 10:
                     info = {
-                        "model": params[4].replace("\\x20", " ") if len(params) > 4 else "EG8145V5",
-                        "serial_number": params[1] if len(params) > 1 else "",
-                        "hardware_version": params[2].replace("\\x2e", ".") if len(params) > 2 else "",
-                        "software_version": params[3] if len(params) > 3 else "",
+                        "model": params[4].replace("\\x20", " "),
+                        "serial_number": params[1],
+                        "hardware_version": params[2].replace("\\x2e", "."),
+                        "software_version": params[3],
                         "description": params[8].replace("\\x20", " ").replace("\\x2b", "+").replace("\\x2f", "/").replace("\\x3a", ":").replace("\\x28", "(").replace("\\x29", ")") if len(params) > 8 else "",
                         "mac": params[7].replace("\\x3a", ":") if len(params) > 7 else "",
+                        "cpu_usage": cpu_match.group(1) if cpu_match else "",
+                        "memory_usage": mem_match.group(1) if mem_match else "",
+                        "uptime": uptime_match.group(1) if uptime_match else ""
                     }
-            
-            # Extract CPU and memory usage
-            cpu_match = re.search(r"var cpuUsed = '(\d+)%'", response.text)
-            mem_match = re.search(r"var memUsed = '(\d+)%'", response.text)
-            
             
             return info if info else {}
             
