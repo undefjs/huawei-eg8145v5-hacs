@@ -1,10 +1,9 @@
 """Support for Huawei EG8145V5 sensors."""
 import logging
-from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTime
+from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -53,11 +52,11 @@ class HuaweiDeviceCountSensor(CoordinatorEntity, SensorEntity):
         """Return device attributes."""
         device_info = self.coordinator.data.get("device_info", {})
         return {
-            "model": device_info.get("model", "EG8145V5"),
+            "model": device_info.get("model", ""),
             "serial_number": device_info.get("serial_number", ""),
             "hardware_version": device_info.get("hardware_version", ""),
             "software_version": device_info.get("software_version", ""),
-            "mac_address": device_info.get("mac", ""),
+            "mac_address": device_info.get("mac", "")
         }
 
 class HuaweiOnlineDevicesSensor(CoordinatorEntity, SensorEntity):
@@ -120,32 +119,37 @@ class HuaweiMemorySensor(CoordinatorEntity, SensorEntity):
         return None
 
 class HuaweiUptimeSensor(CoordinatorEntity, SensorEntity):
-    """Sensor for router uptime."""
+    """Sensor for router last boot time."""
 
     def __init__(self, coordinator: HuaweiDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._attr_name = "Uptime"
-        self._attr_unique_id = f"{DOMAIN}_uptime"
-        self._attr_icon = "mdi:clock-outline"
-        self._attr_device_class = SensorDeviceClass.DURATION
-        self._attr_native_unit_of_measurement = UnitOfTime.SECONDS
+        self._attr_name = "Last Boot"
+        self._attr_unique_id = f"{DOMAIN}_last_boot"
+        self._attr_icon = "mdi:restart"
+        self._attr_device_class = SensorDeviceClass.TIMESTAMP
 
     @property
     def native_value(self):
-        """Return the state of the sensor."""
+        """Return when the router was last booted."""
+        from datetime import datetime, timedelta, timezone
+        
         device_info = self.coordinator.data.get("device_info", {})
         uptime_minutes = device_info.get("uptime")
         
-        # Uptime from router is in MINUTES, convert to seconds
+        # Uptime from router is in MINUTES
         if uptime_minutes and isinstance(uptime_minutes, (int, float)):
-            return int(uptime_minutes) * 60  # Convert minutes to seconds
-        # Try to parse if it's a string
-        if isinstance(uptime_minutes, str) and uptime_minutes.isdigit():
-            return int(uptime_minutes) * 60  # Convert minutes to seconds
+            minutes = int(uptime_minutes)
+        elif isinstance(uptime_minutes, str) and uptime_minutes.isdigit():
+            minutes = int(uptime_minutes)
+        else:
+            return None
         
-        # Return None instead of 0 to mark as unavailable
-        return None
+        # Calculate boot time: current time - uptime
+        now = datetime.now(timezone.utc)
+        boot_time = now - timedelta(minutes=minutes)
+        
+        return boot_time
 
     @property
     def extra_state_attributes(self):
@@ -162,12 +166,14 @@ class HuaweiUptimeSensor(CoordinatorEntity, SensorEntity):
                     mins = minutes % 60
                     
                     return {
-                        "formatted": f"{days}d {hours}h {mins}m",
-                        "days": days,
-                        "hours": hours,
-                        "minutes": mins,
+                        "uptime_formatted": f"{days}d {hours}h {mins}m",
+                        "uptime_days": days,
+                        "uptime_hours": hours,
+                        "uptime_minutes": mins,
+                        "uptime_total_minutes": minutes,
                     }
             except (ValueError, AttributeError):
                 pass
         
         return {}
+
