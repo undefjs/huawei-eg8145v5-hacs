@@ -1,0 +1,11 @@
+{
+    "name": "Huawei EG8145V5",
+    "content_in_root": false,
+    "filename": "huawei_eg8145v5",
+    "render_readme": true,
+    "domains": [
+        "sensor",
+        "device_tracker"
+    ],
+    "homeassistant": "2023.1.0"
+}

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Testing
+*.html
+*.txt
+device_data.txt
+deviceinfo.html
+getuserdevinfo.txt
+content.html
+main_page.html
+index.html
+root.html
+index_asp.html
+dashboard.html
+login_page.html
+
+# Test scripts
+test_*.py
+client_test.py
+client.py
+explore_pages.py
+follow_redirects.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Home Assistant
+*.log
