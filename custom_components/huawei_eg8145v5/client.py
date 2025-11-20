@@ -141,11 +141,11 @@ class HuaweiEG8145V5Client:
             mem_match = re.search(r"var memUsed = '(\d+)%'", response.text)
             
             
-            return info if info else {"model": "EG8145V5", "uptime": 0}
+            return info if info else {}
             
         except Exception as e:
             _LOGGER.error(f"Failed to get device info: {e}")
-            return {"model": "EG8145V5", "uptime": 0}
+            raise  # Let the coordinator handle the error
 
     def get_active_devices(self):
         devices = self.get_devices()
@@ -203,7 +203,7 @@ class HuaweiEG8145V5Client:
             return devices
         except Exception as e:
             _LOGGER.error(f"Failed to get devices: {e}")
-            return []
+            raise  # Let the coordinator handle the error
 
     def _request(self, method, path, **kwargs):
         url = f"http://{self.host}/{path.lstrip('/')}"

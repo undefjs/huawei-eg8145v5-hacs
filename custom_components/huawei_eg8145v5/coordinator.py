@@ -25,15 +25,31 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Fetch data from the router."""
         try:
-            # Login if needed (client handles session, but we might need to refresh)
-            # Ideally client.login() checks if session is valid or we just try/except
-            # For now, we'll assume client methods handle re-auth or we do it here.
-            # Let's try to get data, if it fails, try login then get data.
+            # Check if we need to re-login (session might have expired)
+            # Try to get data, if it fails, attempt re-login
             
             data = {}
             
             # We run these in executor because client is synchronous
-            all_devices = await self.hass.async_add_executor_job(self.client.get_devices)
+            try:
+                all_devices = await self.hass.async_add_executor_job(self.client.get_devices)
+            except Exception as e:
+                # If getting devices fails, try to re-login
+                _LOGGER.warning(f"Failed to get devices, attempting re-login: {e}")
+                login_success = await self.hass.async_add_executor_job(self.client.login)
+                if not login_success:
+                    raise UpdateFailed(f"Authentication failed - session expired or invalid credentials")
+                # Retry after login
+                all_devices = await self.hass.async_add_executor_job(self.client.get_devices)
+            
+            # If we got empty devices, it might be an auth issue
+            if all_devices is None or (isinstance(all_devices, list) and len(all_devices) == 0):
+                # This could be normal (no devices) or an auth issue. Let's check device_info
+                device_info = await self.hass.async_add_executor_job(self.client.get_device_info)
+                if not device_info or device_info.get("model") == "EG8145V5" and len(device_info) == 2:
+                    # Minimal response suggests auth failure
+                    raise UpdateFailed("Unable to fetch router data - authentication may have failed")
+            
             active_devices = await self.hass.async_add_executor_job(self.client.get_active_devices)
             device_info = await self.hass.async_add_executor_job(self.client.get_device_info)
             device_count = await self.hass.async_add_executor_job(self.client.get_device_count)
@@ -45,5 +61,7 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
             
             return data
             
+        except UpdateFailed:
+            raise
         except Exception as err:
-            raise UpdateFailed(f"Error communicating with API: {err}")
+            raise UpdateFailed(f"Error communicating with router: {err}")

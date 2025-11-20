@@ -91,7 +91,11 @@ class HuaweiCPUSensor(CoordinatorEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         device_info = self.coordinator.data.get("device_info", {})
-        return device_info.get("cpu_usage")
+        cpu = device_info.get("cpu_usage")
+        # Ensure it's a number, not None
+        if cpu is not None:
+            return int(cpu) if isinstance(cpu, (int, float, str)) and str(cpu).replace('%', '').isdigit() else None
+        return None
 
 class HuaweiMemorySensor(CoordinatorEntity, SensorEntity):
     """Sensor for memory usage."""
@@ -109,7 +113,11 @@ class HuaweiMemorySensor(CoordinatorEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         device_info = self.coordinator.data.get("device_info", {})
-        return device_info.get("memory_usage")
+        mem = device_info.get("memory_usage")
+        # Ensure it's a number, not None
+        if mem is not None:
+            return int(mem) if isinstance(mem, (int, float, str)) and str(mem).replace('%', '').isdigit() else None
+        return None
 
 class HuaweiUptimeSensor(CoordinatorEntity, SensorEntity):
     """Sensor for router uptime."""
@@ -127,26 +135,39 @@ class HuaweiUptimeSensor(CoordinatorEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         device_info = self.coordinator.data.get("device_info", {})
-        uptime_seconds = device_info.get("uptime", 0)
-        # Convert to seconds if needed
-        return uptime_seconds if uptime_seconds else 0
+        uptime_minutes = device_info.get("uptime")
+        
+        # Uptime from router is in MINUTES, convert to seconds
+        if uptime_minutes and isinstance(uptime_minutes, (int, float)):
+            return int(uptime_minutes) * 60  # Convert minutes to seconds
+        # Try to parse if it's a string
+        if isinstance(uptime_minutes, str) and uptime_minutes.isdigit():
+            return int(uptime_minutes) * 60  # Convert minutes to seconds
+        
+        # Return None instead of 0 to mark as unavailable
+        return None
 
     @property
     def extra_state_attributes(self):
         """Return formatted uptime."""
         device_info = self.coordinator.data.get("device_info", {})
-        uptime_seconds = device_info.get("uptime", 0)
+        uptime_minutes = device_info.get("uptime")
         
-        if uptime_seconds:
-            days = uptime_seconds // 86400
-            hours = (uptime_seconds % 86400) // 3600
-            minutes = (uptime_seconds % 3600) // 60
-            seconds = uptime_seconds % 60
-            
-            return {
-                "formatted": f"{days}d {hours}h {minutes}m {seconds}s",
-                "days": days,
-                "hours": hours,
-                "minutes": minutes,
-            }
+        if uptime_minutes and isinstance(uptime_minutes, (int, float, str)):
+            try:
+                minutes = int(uptime_minutes) if isinstance(uptime_minutes, (int, float)) else int(uptime_minutes) if uptime_minutes.isdigit() else 0
+                if minutes > 0:
+                    days = minutes // 1440  # 1440 minutes in a day
+                    hours = (minutes % 1440) // 60
+                    mins = minutes % 60
+                    
+                    return {
+                        "formatted": f"{days}d {hours}h {mins}m",
+                        "days": days,
+                        "hours": hours,
+                        "minutes": mins,
+                    }
+            except (ValueError, AttributeError):
+                pass
+        
         return {}
