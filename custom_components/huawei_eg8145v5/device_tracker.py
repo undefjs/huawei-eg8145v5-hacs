@@ -52,6 +52,9 @@ class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
         self._attr_unique_id = f"{DOMAIN}_{mac_clean}"
         self.entity_id = f"device_tracker.{DOMAIN}_{mac_clean}"
         
+        # Enable all device trackers by default
+        self._attr_entity_registry_enabled_default = True
+        
         # Friendly name: hostname (avoid generic names like wlan0, --), fallback to MAC
         hostname = device.get("HostName", "")
         # Generic or empty hostnames should use MAC instead
