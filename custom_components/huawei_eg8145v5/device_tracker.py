@@ -47,14 +47,18 @@ class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
         self._mac = device.get("MacAddress", "")
         self._device = device
         
-        # Create entity ID: device_tracker.huawei_eg8145v5_MAC (without colons)
-        mac_clean = self._mac.replace(":", "").lower()
+        # Create entity ID: device_tracker.huawei_eg8145v5_MAC (uppercase, underscores)
+        mac_clean = self._mac.replace(":", "_").upper()
         self._attr_unique_id = f"{DOMAIN}_{mac_clean}"
         self.entity_id = f"device_tracker.{DOMAIN}_{mac_clean}"
         
-        # Friendly name: hostname or MAC
+        # Friendly name: hostname (avoid generic names like wlan0, --), fallback to MAC
         hostname = device.get("HostName", "")
-        self._attr_name = hostname if hostname else self._mac
+        # Generic or empty hostnames should use MAC instead
+        if hostname and hostname not in ["--", "wlan0", ""]:
+            self._attr_name = hostname
+        else:
+            self._attr_name = mac_clean
 
     @property
     def is_connected(self) -> bool:
@@ -98,12 +102,12 @@ class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
         for device in self.coordinator.data.get("devices", []):
             if device.get("MacAddress") == self._mac:
                 attrs = {
-                    "mac_address": device.get("MacAddress", ""),
-                    "ip_address": device.get("IpAddr", ""),
+                    "ip": device.get("IpAddr", ""),
+                    "mac": device.get("MacAddress", ""),
                     "status": device.get("DevStatus", ""),
                 }
                 
-                # Add optional attributes if available
+                # Add optional attributes if available and not empty
                 if device.get("HostName"):
                     attrs["hostname"] = device.get("HostName")
                 if device.get("DevType"):
@@ -114,9 +118,12 @@ class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
                     attrs["connected_time"] = device.get("ConnectedTime")
                 if device.get("ActiveTime"):
                     attrs["active_time"] = device.get("ActiveTime")
-                if device.get("RealMacAddress"):
-                    attrs["real_mac_address"] = device.get("RealMacAddress")
+                
+                # Only add real_mac if it's different from the main MAC
+                real_mac = device.get("RealMacAddress", "")
+                if real_mac and real_mac != self._mac:
+                    attrs["real_mac"] = real_mac
                 
                 return attrs
         
-        return {"mac_address": self._mac}
+        return {"mac": self._mac}

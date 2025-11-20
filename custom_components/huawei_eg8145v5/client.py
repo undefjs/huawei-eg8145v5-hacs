@@ -140,21 +140,6 @@ class HuaweiEG8145V5Client:
             cpu_match = re.search(r"var cpuUsed = '(\d+)%'", response.text)
             mem_match = re.search(r"var memUsed = '(\d+)%'", response.text)
             
-            if cpu_match:
-                info['cpu_usage'] = int(cpu_match.group(1))
-            if mem_match:
-                info['memory_usage'] = int(mem_match.group(1))
-            
-            # Extract uptime if available
-            uptime_match = re.search(r"var dev_uptime = '(\d+)'", response.text)
-            if uptime_match:
-                info['uptime'] = int(uptime_match.group(1))
-            
-            # Extract ONT status
-            ont_match = re.search(r'new ONTInfo\([^,]+,\s*"(\d+)",\s*"([^"]+)"\)', response.text)
-            if ont_match:
-                info['ont_id'] = ont_match.group(1)
-                info['ont_status'] = ont_match.group(2)
             
             return info if info else {"model": "EG8145V5", "uptime": 0}
             
