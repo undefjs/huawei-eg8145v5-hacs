@@ -47,10 +47,13 @@ class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
         self._mac = device.get("MacAddress", "")
         self._device = device
         
-        # Create entity ID: device_tracker.huawei_eg8145v5_MAC (uppercase, underscores)
+        # Create unique_id: huawei_eg8145v5_MAC (uppercase, underscores)
+        # This must remain consistent to avoid duplicate entities
         mac_clean = self._mac.replace(":", "_").upper()
         self._attr_unique_id = f"{DOMAIN}_{mac_clean}"
-        self.entity_id = f"device_tracker.{DOMAIN}_{mac_clean}"
+        
+        # Don't set entity_id manually - let Home Assistant generate it from unique_id
+        # This prevents duplicate entity issues
         
         # Enable all device trackers by default
         self._attr_entity_registry_enabled_default = True
@@ -111,8 +114,6 @@ class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
                 }
                 
                 # Add optional attributes if available and not empty
-                if device.get("HostName"):
-                    attrs["hostname"] = device.get("HostName")
                 if device.get("DevType"):
                     attrs["device_type"] = device.get("DevType")
                 if device.get("Port"):
