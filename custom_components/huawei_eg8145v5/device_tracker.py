@@ -1,6 +1,7 @@
 """Support for Huawei EG8145V5 device tracking."""
 import logging
-from homeassistant.components.device_tracker import ScannerEntity, SourceType
+from homeassistant.components.device_tracker import SourceType
+from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -31,7 +32,7 @@ async def async_setup_entry(
             mac = device.get("MacAddress", "")
             if mac and mac not in tracked:
                 tracked.add(mac)
-                new_entities.append(HuaweiDeviceTracker(coordinator, device))
+                new_entities.append(HuaweiDeviceTracker(coordinator, device, entry.entry_id))
         
         if new_entities:
             async_add_entities(new_entities)
@@ -39,22 +40,19 @@ async def async_setup_entry(
     coordinator.async_add_listener(update_devices)
     update_devices()
 
-class HuaweiDeviceTracker(CoordinatorEntity, ScannerEntity):
+class HuaweiDeviceTracker(CoordinatorEntity, TrackerEntity):
     """Representation of a Huawei router tracked device."""
 
-    def __init__(self, coordinator: HuaweiDataUpdateCoordinator, device: dict) -> None:
+    def __init__(self, coordinator: HuaweiDataUpdateCoordinator, device: dict, entry_id: str) -> None:
         """Initialize the device tracker."""
         super().__init__(coordinator)
         self._mac = device.get("MacAddress", "")
         self._device = device
         
-        # Create unique_id: huawei_eg8145v5_MAC (uppercase, underscores)
-        # This must remain consistent to avoid duplicate entities
+        # Create unique_id: huawei_eg8145v5_ENTRYID_MAC
+        # This ensures uniqueness across multiple config entries
         mac_clean = self._mac.replace(":", "_").upper()
-        self._attr_unique_id = f"{DOMAIN}_{mac_clean}"
-        
-        # Don't set entity_id manually - let Home Assistant generate it from unique_id
-        # This prevents duplicate entity issues
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_{mac_clean}"
         
         # Enable all device trackers by default
         self._attr_entity_registry_enabled_default = True
