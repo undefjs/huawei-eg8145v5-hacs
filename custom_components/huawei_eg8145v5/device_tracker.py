@@ -19,10 +19,11 @@ async def async_setup_entry(
     """Set up device tracker from a config entry."""
     coordinator: HuaweiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
+    tracked = set()
+
     @callback
     def update_devices():
         """Update tracked devices."""
-        tracked = set()
         new_entities = []
         
         # Get ALL devices (both online and offline)
